@@ -1,0 +1,457 @@
+diff --git a/l1/bin/nr5g/gnb/l1/l1.sh b/l1/bin/nr5g/gnb/l1/l1.sh
+index 9d2b254..84e99ed 100755
+--- a/l1/bin/nr5g/gnb/l1/l1.sh
++++ b/l1/bin/nr5g/gnb/l1/l1.sh
+@@ -72,7 +72,7 @@ fi
+ 
+ ulimit -c unlimited
+ 
+-if [ ${MACHINE_TYPE} == 'x86_64' ]; then
++if [ ${MACHINE_TYPE} = 'x86_64' ]; then
+     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$RTE_WLS:../../../../libs/cpa/bin
+ 
+     if [ $WLS_DPDK_MODE = "0" ]; then
+diff --git a/l1/bin/nr5g/gnb/l1/phycfg_timer.xml b/l1/bin/nr5g/gnb/l1/phycfg_timer.xml
+index 828e9af..cb6b3a3 100644
+--- a/l1/bin/nr5g/gnb/l1/phycfg_timer.xml
++++ b/l1/bin/nr5g/gnb/l1/phycfg_timer.xml
+@@ -50,9 +50,9 @@
+         <!--  DPDK IOVA Mode used for DPDK initialization. If 0, then PA mode. Else VA Mode -->
+         <dpdkIovaMode>0</dpdkIovaMode>
+         <!--  DPDK FEC BBDEV to use             [0 - SW, 1 - HW accelerator, 2 - Both] -->
+-        <dpdkBasebandFecMode>0</dpdkBasebandFecMode>
++        <dpdkBasebandFecMode>1</dpdkBasebandFecMode>
+         <!--  DPDK BBDev name added to the passlist. The argument format is <[domain:]bus:devid.func> -->
+-        <dpdkBasebandDevice>0000:1f:00.1</dpdkBasebandDevice>
++        <dpdkBasebandDevice>0000:ca:00.0</dpdkBasebandDevice>
+     </DPDK>
+ 
+     <Radio>
+diff --git a/l1/bin/nr5g/gnb/l1/phycfg_xran.xml b/l1/bin/nr5g/gnb/l1/phycfg_xran.xml
+index 1b7f26c..dc72a5f 100644
+--- a/l1/bin/nr5g/gnb/l1/phycfg_xran.xml
++++ b/l1/bin/nr5g/gnb/l1/phycfg_xran.xml
+@@ -45,13 +45,13 @@
+         <!--  name of DPDK memory zone, needs to align between primary and secondary process -->
+         <dpdkFilePrefix>gnb0</dpdkFilePrefix>
+         <!--  DPDK memory size allocated from hugepages [MB]  [default: 2048] -->
+-        <dpdkMemorySize>20480</dpdkMemorySize>
++        <dpdkMemorySize>16384</dpdkMemorySize>
+         <!--  DPDK IOVA Mode used for DPDK initialization. If 0, then PA mode. Else VA Mode -->
+         <dpdkIovaMode>0</dpdkIovaMode>
+         <!--  DPDK FEC BBDEV to use             [0 - SW, 1 - HW accelerator, 2 - Both] -->
+-        <dpdkBasebandFecMode>0</dpdkBasebandFecMode>
++        <dpdkBasebandFecMode>1</dpdkBasebandFecMode>
+         <!--  DPDK BBDev name added to the passlist. The argument format is <[domain:]bus:devid.func> -->
+-        <dpdkBasebandDevice>0000:92:00.0</dpdkBasebandDevice>
++        <dpdkBasebandDevice>0000:ca:00.0</dpdkBasebandDevice>
+         <!-- DDP flow config -->
+         <FlowConfig>
+             <FlowNum>0</FlowNum>
+@@ -81,6 +81,7 @@
+         <!-- This section is used to init DPDK shared ports and memory with secondary process  -->
+         <DPDKSharedResource>
+             <!-- number of the set of shared ports and corresponding memory, maximum 4, if none, set to 0 -->
++            <!-- <numSharedResource>3</numSharedResource> -->
+             <numSharedResource>0</numSharedResource>
+ 
+             <!--  Shared Resource Config 0 -->
+@@ -100,7 +101,7 @@
+                 <!-- The size of the ring (must be a power of 2) -->
+                 <ringSize0>1024</ringSize0>
+                 <!-- DPDK port pci-e address, if don't want to init port, set number to 0 -->
+-                <portAddr0>0000:af:00.0</portAddr0>
++                <portAddr0>0</portAddr0>
+                 <!-- DPDK port socket index -->
+                 <portSocketIdx0>1</portSocketIdx0>
+                 <!-- Number of Tx queue -->
+@@ -134,17 +135,17 @@
+                 <!-- The size of the ring (must be a power of 2) -->
+                 <ringSize1>1024</ringSize1>
+                 <!-- DPDK port pci-e address, if don't want to init port, set number to 0 -->
+-                <portAddr1>0000:af:00.1</portAddr1>
++                <portAddr1>0</portAddr1>
+                 <!-- DPDK port socket index -->
+-                <portSocketIdx1>1</portSocketIdx1>
++                <portSocketIdx1>0</portSocketIdx1>
+                 <!-- Number of Tx queue -->
+-                <txQueueNum1>2</txQueueNum1>
++                <txQueueNum1>4</txQueueNum1>
+                 <!-- Tx queue description -->
+-                <txQueueDesc1>512</txQueueDesc1>
++                <txQueueDesc1>2048</txQueueDesc1>
+                 <!-- Number of Rx queue -->
+                 <rxQueueNum1>1</rxQueueNum1>
+                 <!-- Rx queue description -->
+-                <rxQueueDesc1>128</rxQueueDesc1>
++                <rxQueueDesc1>2048</rxQueueDesc1>
+                 <!-- Max payload size, if larger than 1500Bytes, Jumbo frame will be enabled -->
+                 <maxPayloadSize1>9728</maxPayloadSize1>
+                 <!--  Enable DPDK based NIC ports on testmac [0 - Dont Initialize, 1 - Initialize] -->
+@@ -233,14 +234,14 @@
+             <PdschSymbolSplit>0</PdschSymbolSplit>
+ 
+             <!-- Enable the PDSCH symbol process to OFDM symbol based split, otherwise UE group/UE based split. 0 disable, 1 enable -->
+-            <PdschOfdmSplitEnable>1</PdschOfdmSplitEnable>
++            <PdschOfdmSplitEnable>0</PdschOfdmSplitEnable>
+ 
+             <!-- Split PDSCH DL beamforiming weight generation processing -->
+             <PdschDlWeightSplit>0</PdschDlWeightSplit>
+ 
+             <!-- Max number of parallel tasks that the DL FEC Encoder is split into. Number needs to be between 1 and 4. If wrong value entered, it will be defaulted to 1.  -->
+             <!-- For hardware offload (using fpga / eAsic) it will be defaulted to 1.  -->
+-            <FecEncSplit>1</FecEncSplit>
++            <FecEncSplit>4</FecEncSplit>
+         </Pdsch>
+         <Pusch>
+             <!-- Split processing for Channel Estimation for PUSCH -->
+@@ -263,7 +264,7 @@
+ 
+             <!-- Max number of parallel tasks that the UL FEC Decoder is split into. Number needs to be between 1 and 4. If wrong value entered, it will be defaulted to 1. -->
+             <!-- For hardware offload (using fpga / eAsic) it will be defaulted to 1.  -->
+-            <FecDecSplit>1</FecDecSplit>
++            <FecDecSplit>4</FecDecSplit>
+ 
+             <!-- Only for terasic. Number of decimal digits of LLR fixed point output. If 0 then this value is set to 2, which means LLR is 8S2. Else this value is used -->
+             <llrOutDecimalDigit>2</llrOutDecimalDigit>
+@@ -279,7 +280,7 @@
+             <!-- frequency interpolation method for PUSCH CE -->
+             <!-- bit 0: 0: 1RB sinc interpolation 1: 4RB sinc interpolation -->
+             <!-- bit 1: 0: disable pre - interpolation 1: enable pre - interpolation -->
+-            <CEInterpMethod>2</CEInterpMethod>
++            <CEInterpMethod>0</CEInterpMethod>
+ 
+             <!-- frequency offset compensation -->
+             <!-- 0: disable, 1: enable -->
+@@ -289,7 +290,7 @@
+             <CEFocGranularity>768</CEFocGranularity>
+ 
+             <!-- time domain linear interpolation for PUSCH enable = 1, disable = 0-->
+-            <PuschLinearInterpEnable>1</PuschLinearInterpEnable>
++            <PuschLinearInterpEnable>0</PuschLinearInterpEnable>
+ 
+             <!-- time domain linear interpolation granularity for PUSCH cell0, cell1 ... cellx respectively -->
+             <!-- PuschLinearInterpGranularityAll - Use this value for all Cells -->
+@@ -298,7 +299,10 @@
+             <!-- PuschLinearInterpGranularityAll will superced PuschLinearInterpGranularityX (where X is CellId) -->
+             <!-- 0 - Linear, 1 - Linear2 ... 4 - Linear6, 99 - nearest -->
+             <!-- use comma to separte the values if want to apply differnt granularity for differnt UE groups -->
+-            <PuschLinearInterpGranularityAll>4</PuschLinearInterpGranularityAll>
++            <PuschLinearInterpGranularity0>99</PuschLinearInterpGranularity0>
++            <PuschLinearInterpGranularity1>0,1,2,3,4</PuschLinearInterpGranularity1>
++            <PuschLinearInterpGranularity2>0,1,2,3,4</PuschLinearInterpGranularity2>
++            <PuschLinearInterpGranularity3>0,1,2,3,4</PuschLinearInterpGranularity3>
+ 
+             <!-- beamforming weight matrix gen algo choose-->
+             <!-- 0: ZF based weight gen algo, 1: dftcodebook based weight gen algo-->
+@@ -320,7 +324,7 @@
+         </Srs>
+         <Prach>
+             <!-- Prach Detection Threshold. If non zero, computed value is used. -->
+-            <prachDetectThreshold>0</prachDetectThreshold>
++            <prachDetectThreshold>200000</prachDetectThreshold>
+             <!-- prach detect fo check -->
+             <!-- 0: disable, 1: enable -->
+             <prachDetectFoCheck>0</prachDetectFoCheck>
+@@ -353,7 +357,7 @@
+         <systemThread>2, 0, 0</systemThread>
+ 
+         <!-- Timer Thread (Single core id value): Core, priority, Policy [0: SCHED_FIFO 1: SCHED_RR] -->
+-        <timerThread>0, 96, 0</timerThread>
++        <timerThread>1, 96, 0</timerThread>
+ 
+         <!-- FPGA for LDPC Thread (Single core id value): Core, priority, Policy [0: SCHED_FIFO 1: SCHED_RR] -->
+         <FpgaDriverCpuInfo>3, 96, 0</FpgaDriverCpuInfo>
+@@ -377,7 +381,7 @@
+         <BbuPoolThreadCorePolicy>0</BbuPoolThreadCorePolicy>
+ 
+         <!-- BBUPool Worker Thread Cores (Bit mask of all cores that are used for BBU Pool in Decimal or Hex [needs to start with "0x"]) -->
+-        <BbuPoolThreadDefault_0_63>0xF0</BbuPoolThreadDefault_0_63>
++        <BbuPoolThreadDefault_0_63>0xFFE0</BbuPoolThreadDefault_0_63>
+         <BbuPoolThreadDefault_64_127>0x0</BbuPoolThreadDefault_64_127>
+         <BbuPoolThreadDefault_128_191>0x0</BbuPoolThreadDefault_128_191>
+         <BbuPoolThreadDefault_192_255>0x0</BbuPoolThreadDefault_192_255>
+@@ -397,16 +401,16 @@
+         <BbuPoolThreadDlbeam_192_255>0x0</BbuPoolThreadDlbeam_192_255>
+ 
+         <!-- URLLC Processing Thread (Bit mask of all cores that are used in Decimal or Hex [needs to start with "0x"]) -->
+-        <BbuPoolThreadUrllc>0x100</BbuPoolThreadUrllc>
++        <BbuPoolThreadUrllc>0x8000</BbuPoolThreadUrllc>
+ 
+         <!-- The number of elements per queue (for new scheduler only). Values need to be comma seperated and a max of 10 queues. -->
+         <eBbuPoolNumQueue>1024, 1024, 1024, 1024</eBbuPoolNumQueue>
+ 
+         <!-- Number of ping pong context to use for scheduler. THis is needed mainly for TDD scenarios so UL is prioritized over DL. Range [1-4] -->
+-        <eBbuPoolNumContext>1</eBbuPoolNumContext>
++        <eBbuPoolNumContext>2</eBbuPoolNumContext>
+ 
+         <!-- Maximum Number of contexts to fetch by each consumer thread. This is used only if eBbuPoolNumContext>1. Range [1-eBbuPoolNumContext] -->
+-        <eBbuPoolMaxContextFetch>1</eBbuPoolMaxContextFetch>
++        <eBbuPoolMaxContextFetch>2</eBbuPoolMaxContextFetch>
+ 
+         <!-- Enable internal print of statistics from New Scheduler Library. 0: Off, 1: On. -->
+         <eBbuPoolPrintFlag>0</eBbuPoolPrintFlag>
+diff --git a/l1/bin/nr5g/gnb/l1/phycfg_xran_mmw.xml b/l1/bin/nr5g/gnb/l1/phycfg_xran_mmw.xml
+index 345c7a6..8d3347f 100644
+--- a/l1/bin/nr5g/gnb/l1/phycfg_xran_mmw.xml
++++ b/l1/bin/nr5g/gnb/l1/phycfg_xran_mmw.xml
+@@ -49,9 +49,9 @@
+         <!--  DPDK IOVA Mode used for DPDK initialization. If 0, then PA mode. Else VA Mode -->
+         <dpdkIovaMode>0</dpdkIovaMode>
+         <!--  DPDK FEC BBDEV to use             [0 - SW, 1 - HW accelerator, 2 - Both] -->
+-        <dpdkBasebandFecMode>1</dpdkBasebandFecMode>
++        <dpdkBasebandFecMode>0</dpdkBasebandFecMode>
+         <!--  DPDK BBDev name added to the passlist. The argument format is <[domain:]bus:devid.func> -->
+-        <dpdkBasebandDevice>0000:92:00.0</dpdkBasebandDevice>
++        <dpdkBasebandDevice>0000:ca:00.0</dpdkBasebandDevice>
+     </DPDK>
+ 
+     <Radio>
+diff --git a/l1/bin/nr5g/gnb/l1/xrancfg_mmw.xml b/l1/bin/nr5g/gnb/l1/xrancfg_mmw.xml
+index 8f6f193..6a3078c 100644
+--- a/l1/bin/nr5g/gnb/l1/xrancfg_mmw.xml
++++ b/l1/bin/nr5g/gnb/l1/xrancfg_mmw.xml
+@@ -23,61 +23,17 @@
+     <!-- numbers of O-RU connected to O-DU. All O-RUs are the same capabilities. Max O-RUs is per XRAN_PORTS_NUM i.e. 4 -->
+     <oRuNum>1</oRuNum>
+     <!--  # 10G,25G,40G,100G speed of Physical connection on O-RU -->
+-    <oRuEthLinkSpeed>25</oRuEthLinkSpeed>
++    <oRuEthLinkSpeed>10</oRuEthLinkSpeed>
+     <!--  # 1, 2, 3 total number of links per O-RU (Fronthaul Ethernet link in IOT spec) -->
+     <oRuLinesNumber>1</oRuLinesNumber>
+ 
+     <!-- O-RU 0 -->
+-    <PciBusAddoRu0Vf0>0000:51:01.0</PciBusAddoRu0Vf0>
+-    <PciBusAddoRu0Vf1>0000:51:01.1</PciBusAddoRu0Vf1>
+-    <PciBusAddoRu0Vf2>0000:51:01.2</PciBusAddoRu0Vf2>
+-    <PciBusAddoRu0Vf3>0000:51:01.3</PciBusAddoRu0Vf3>
+-
+-    <!-- O-RU 1 -->
+-    <PciBusAddoRu1Vf0>0000:51:01.4</PciBusAddoRu1Vf0>
+-    <PciBusAddoRu1Vf1>0000:51:01.5</PciBusAddoRu1Vf1>
+-    <PciBusAddoRu1Vf2>0000:51:01.6</PciBusAddoRu1Vf2>
+-    <PciBusAddoRu1Vf3>0000:51:01.7</PciBusAddoRu1Vf3>
+-
+-    <!-- O-RU 2 -->
+-    <PciBusAddoRu2Vf0>0000:51:02.0</PciBusAddoRu2Vf0>
+-    <PciBusAddoRu2Vf1>0000:51:02.1</PciBusAddoRu2Vf1>
+-    <PciBusAddoRu2Vf2>0000:51:02.2</PciBusAddoRu2Vf2>
+-    <PciBusAddoRu2Vf3>0000:51:02.3</PciBusAddoRu2Vf3>
+-
+-    <!-- O-RU 4 -->
+-    <PciBusAddoRu3Vf0>0000:00:00.0</PciBusAddoRu3Vf0>
+-    <PciBusAddoRu3Vf1>0000:00:00.0</PciBusAddoRu3Vf1>
+-    <PciBusAddoRu3Vf2>0000:00:00.0</PciBusAddoRu3Vf2>
+-    <PciBusAddoRu3Vf3>0000:00:00.0</PciBusAddoRu3Vf3>
++    <PciBusAddoRu0Vf0>0000:31:01.0</PciBusAddoRu0Vf0>
++    <PciBusAddoRu0Vf1>0000:31:01.1</PciBusAddoRu0Vf1>
+ 
+     <!-- remote O-RU 0 Eth Link 0 VF0, VF1-->
+     <oRuRem0Mac0>00:11:22:33:00:01</oRuRem0Mac0>
+     <oRuRem0Mac1>00:11:22:33:00:11</oRuRem0Mac1>
+-    <!-- remote O-RU 0 Eth Link 1 VF2, VF3 -->
+-    <oRuRem0Mac2>00:11:22:33:00:21</oRuRem0Mac2>
+-    <oRuRem0Mac3>00:11:22:33:00:31</oRuRem0Mac3>
+-
+-    <!-- remote O-RU 1 Eth Link 0 VF4, VF5-->
+-    <oRuRem1Mac0>00:11:22:33:01:01</oRuRem1Mac0>
+-    <oRuRem1Mac1>00:11:22:33:01:11</oRuRem1Mac1>
+-    <!-- remote O-RU 1 Eth Link 1 VF6, VF7 -->
+-    <oRuRem1Mac2>00:11:22:33:01:21</oRuRem1Mac2>
+-    <oRuRem1Mac3>00:11:22:33:01:31</oRuRem1Mac3>
+-
+-    <!-- remote O-RU 2 Eth Link 0 VF8, VF9 -->
+-    <oRuRem2Mac0>00:11:22:33:02:01</oRuRem2Mac0>
+-    <oRuRem2Mac1>00:11:22:33:02:11</oRuRem2Mac1>
+-    <!-- remote O-RU 2 Eth Link 1 VF10, VF11-->
+-    <oRuRem2Mac2>00:11:22:33:02:21</oRuRem2Mac2>
+-    <oRuRem2Mac3>00:11:22:33:02:31</oRuRem2Mac3>
+-
+-    <!-- remote O-RU 2 Eth Link 0 VF12, VF13 -->
+-    <oRuRem3Mac0>00:11:22:33:03:01</oRuRem3Mac0>
+-    <oRuRem3Mac1>00:11:22:33:03:11</oRuRem3Mac1>
+-    <!-- remote O-RU 2 Eth Link 1 VF14, VF15-->
+-    <oRuRem3Mac2>00:11:22:33:03:21</oRuRem3Mac2>
+-    <oRuRem3Mac3>00:11:22:33:03:31</oRuRem3Mac3>
+ 
+     <!--  Number of cells (CCs) running on this O-RU  [1 - Cell , 2 - Cells, 3 - Cells , 4 - Cells ] -->
+     <oRu0NumCc>1</oRu0NumCc>
+diff --git a/l1/bin/nr5g/gnb/l1/xrancfg_sub6.xml b/l1/bin/nr5g/gnb/l1/xrancfg_sub6.xml
+index e5716ca..c7d524a 100644
+--- a/l1/bin/nr5g/gnb/l1/xrancfg_sub6.xml
++++ b/l1/bin/nr5g/gnb/l1/xrancfg_sub6.xml
+@@ -21,17 +21,17 @@
+     <!-- numbers of O-RU connected to O-DU. All O-RUs are the same capabilities. Max O-RUs is per XRAN_PORTS_NUM i.e. 4 -->
+     <oRuNum>1</oRuNum>
+     <!--  # 10G,25G,40G,100G speed of Physical connection on O-RU -->
+-    <oRuEthLinkSpeed>25</oRuEthLinkSpeed>
++    <oRuEthLinkSpeed>10</oRuEthLinkSpeed>
+     <!--  # 1, 2, 3 total number of links per O-RU (Fronthaul Ethernet link in IOT spec) -->
+     <oRuLinesNumber>1</oRuLinesNumber>
+-    <!--  # C,U plane on same VF or different VF. 0--different VF, 1--same VF -->
++    <!--  # C,U plane on same VF or different VF. 0-different VF, 1-same VF -->
+     <oRuCUon1Vf>0</oRuCUon1Vf>
+ 
+     <!-- O-RU 0 -->
+-    <PciBusAddoRu0Vf0>0000:51:01.0</PciBusAddoRu0Vf0>
+-    <PciBusAddoRu0Vf1>0000:51:01.1</PciBusAddoRu0Vf1>
+-    <PciBusAddoRu0Vf2>0000:51:01.2</PciBusAddoRu0Vf2>
+-    <PciBusAddoRu0Vf3>0000:51:01.3</PciBusAddoRu0Vf3>
++    <PciBusAddoRu0Vf0>0000:31:01.0</PciBusAddoRu0Vf0>
++    <PciBusAddoRu0Vf1>0000:31:01.1</PciBusAddoRu0Vf1>
++    <PciBusAddoRu0Vf2>0000:31:01.2</PciBusAddoRu0Vf2>
++    <PciBusAddoRu0Vf3>0000:31:01.3</PciBusAddoRu0Vf3>
+ 
+     <!-- O-RU 1 -->
+     <PciBusAddoRu1Vf0>0000:51:01.4</PciBusAddoRu1Vf0>
+@@ -80,7 +80,7 @@
+     <oRuRem3Mac3>00:11:22:33:03:31</oRuRem3Mac3>
+ 
+     <!--  Number of cells (CCs) running on this O-RU  [1 - Cell , 2 - Cells, 3 - Cells , 4 - Cells ] -->
+-    <oRu0NumCc>12</oRu0NumCc>
++    <oRu0NumCc>1</oRu0NumCc>
+     <!-- First Phy instance ID mapped to this O-RU CC0  -->
+     <oRu0Cc0PhyId>0</oRu0Cc0PhyId>
+     <!-- Second Phy instance ID mapped to this O-RU CC1 -->
+@@ -141,10 +141,10 @@
+ 
+ 
+     <!-- XRAN Thread (core where the XRAN polling function is pinned: Core, priority, Policy [0: SCHED_FIFO 1: SCHED_RR] -->
+-    <xRANThread>19, 96, 0</xRANThread>
++    <xRANThread>5, 96, 0</xRANThread>
+ 
+     <!-- core mask for XRAN Packets Worker (core where the XRAN packet processing is pinned): Core, priority, Policy [0: SCHED_FIFO 1: SCHED_RR] -->
+-    <xRANWorker>0x8000000000, 96, 0</xRANWorker>
++    <xRANWorker>0x20000, 96, 0</xRANWorker>
+     <xRANWorker_64_127>0x0000000000, 96, 0</xRANWorker_64_127>
+     <!-- XRAN: Category of O-RU 0 - Category A, 1 - Category B -->
+     <Category>0</Category>
+@@ -154,7 +154,7 @@
+     <xRANMLog>0</xRANMLog>
+ 
+     <!-- XRAN: enable sleep on PMD cores -->
+-    <xranPmdSleep>0</xranPmdSleep>
++    <xranPmdSleep>1</xranPmdSleep>
+ 
+     <!-- RU Settings -->
+     <Tadv_cp_dl>25</Tadv_cp_dl>
+@@ -165,11 +165,11 @@
+     <T2a_min_cp_ul>285</T2a_min_cp_ul>
+     <T2a_max_cp_ul>429</T2a_max_cp_ul>
+     <!-- Reception Window U-plane -->
+-    <T2a_min_up>71</T2a_min_up>
+-    <T2a_max_up>428</T2a_max_up>
++    <T2a_min_up>134</T2a_min_up>
++    <T2a_max_up>1087</T2a_max_up>
+     <!-- Transmission Window U-plane -->
+-    <Ta3_min>20</Ta3_min>
+-    <Ta3_max>32</Ta3_max>
++    <Ta3_min>152</Ta3_min>
++    <Ta3_max>160</Ta3_max>
+ 
+     <!-- O-DU Settings -->
+     <!-- MTU size -->
+@@ -180,16 +180,16 @@
+ 
+     <!-- Transmission Window Fast C-plane DL -->
+     <T1a_min_cp_dl>258</T1a_min_cp_dl>
+-    <T1a_max_cp_dl>470</T1a_max_cp_dl>
++    <T1a_max_cp_dl>392</T1a_max_cp_dl>
+     <!-- Transmission Window Fast C-plane UL -->
+     <T1a_min_cp_ul>285</T1a_min_cp_ul>
+-    <T1a_max_cp_ul>429</T1a_max_cp_ul>
++    <T1a_max_cp_ul>300</T1a_max_cp_ul>
+     <!-- Transmission Window U-plane -->
+-    <T1a_min_up>50</T1a_min_up>
+-    <T1a_max_up>196</T1a_max_up>
++    <T1a_min_up>155</T1a_min_up>
++    <T1a_max_up>300</T1a_max_up>
+     <!-- Reception Window U-Plane-->
+     <Ta4_min>0</Ta4_min>
+-    <Ta4_max>75</Ta4_max>
++    <Ta4_max>200</Ta4_max>
+ 
+     <!-- Enable Control Plane -->
+     <EnableCp>1</EnableCp>
+@@ -223,15 +223,15 @@
+     <!-- Whether Prach iqWidth when DynamicSectionEna and BFP Compression enabled -->
+     <xranPrachiqWidth>16</xranPrachiqWidth>
+ 
+-   <oRu0MaxSectionsPerSlot>6</oRu0MaxSectionsPerSlot>
+-   <oRu0MaxSectionsPerSymbol>6</oRu0MaxSectionsPerSymbol>
++   <oRu0MaxSectionsPerSlot>1</oRu0MaxSectionsPerSlot>
++   <oRu0MaxSectionsPerSymbol>1</oRu0MaxSectionsPerSymbol>
+     <oRu0nPrbElemDl>1</oRu0nPrbElemDl>
+     <!--nRBStart, nRBSize, nStartSymb, numSymb, nBeamIndex, bf_weight_update, compMethod, iqWidth, BeamFormingType, Scalefactor, REMask -->
+     <!-- weight base beams -->
+     <oRu0PrbElemDl0>0,273,0,14,0,0,1,9,0,0,0</oRu0PrbElemDl0>
+-    <oRu0PrbElemDl1>50,25,0,14,1,1,0,16,1,0,0</oRu0PrbElemDl1>
+-    <oRu0PrbElemDl2>72,36,0,14,3,1,1,9,1,0,0</oRu0PrbElemDl2>
+-    <oRu0PrbElemDl3>144,48,0,14,4,1,1,9,1,0,0</oRu0PrbElemDl3>
++    <oRu0PrbElemDl1>180,93,0,14,0,0,1,9,0,0,0</oRu0PrbElemDl1>
++    <oRu0PrbElemDl2>190,15,0,14,3,1,1,9,1,0,0</oRu0PrbElemDl2>
++    <oRu0PrbElemDl3>135,45,0,14,4,1,1,9,1,0,0</oRu0PrbElemDl3>
+     <oRu0PrbElemDl4>144,36,0,14,5,1,1,9,1,0,0</oRu0PrbElemDl4>
+     <oRu0PrbElemDl5>180,36,0,14,6,1,1,9,1,0,0</oRu0PrbElemDl5>
+     <oRu0PrbElemDl6>216,36,0,14,7,1,1,9,1,0,0</oRu0PrbElemDl6>
+@@ -242,7 +242,7 @@
+     <!--nRBStart, nRBSize, nStartSymb, numSymb, nBeamIndex, bf_weight_update, compMethod, iqWidth, BeamFormingType, Scalefactor, REMask-->
+     <!-- weight base beams -->
+     <oRu0PrbElemUl0>0,273,0,14,0,0,1,9,0,0,0</oRu0PrbElemUl0>
+-    <oRu0PrbElemUl1>0,273,0,14,0,0,1,9,0,0,0</oRu0PrbElemUl1>
++    <oRu0PrbElemUl1>169,104,0,14,0,0,0,16,0,0,0</oRu0PrbElemUl1>
+     <oRu0PrbElemUl2>72,36,0,14,3,1,1,9,1,0,0</oRu0PrbElemUl2>
+     <oRu0PrbElemUl3>108,36,0,14,4,1,1,9,1,0,0</oRu0PrbElemUl3>
+     <oRu0PrbElemUl4>144,36,0,14,5,1,1,9,1,0,0</oRu0PrbElemUl4>
+@@ -251,8 +251,8 @@
+     <oRu0PrbElemUl7>252,21,0,14,8,1,1,9,1,0,0</oRu0PrbElemUl7>
+ 
+ 
+-    <oRu1MaxSectionsPerSlot>6</oRu1MaxSectionsPerSlot>
+-    <oRu1MaxSectionsPerSymbol>6</oRu1MaxSectionsPerSymbol>
++    <oRu1MaxSectionsPerSlot>1</oRu1MaxSectionsPerSlot>
++    <oRu1MaxSectionsPerSymbol>1</oRu1MaxSectionsPerSymbol>
+     <oRu1nPrbElemDl>1</oRu1nPrbElemDl>
+     <oRu1PrbElemDl0>0,273,0,14,0,0,1,9,0,0,0</oRu1PrbElemDl0>
+     <oRu1PrbElemDl1>53,53,0,14,2,1,1,8,1,0,0</oRu1PrbElemDl1>
+@@ -260,8 +260,8 @@
+     <oRu1PrbElemUl0>0,273,0,14,0,0,1,9,0,0,0</oRu1PrbElemUl0>
+     <oRu1PrbElemUl1>53,53,0,14,2,1,1,8,1,0,0</oRu1PrbElemUl1>
+ 
+-    <oRu2MaxSectionsPerSlot>6</oRu2MaxSectionsPerSlot>
+-    <oRu2MaxSectionsPerSymbol>6</oRu2MaxSectionsPerSymbol>
++    <oRu2MaxSectionsPerSlot>1</oRu2MaxSectionsPerSlot>
++    <oRu2MaxSectionsPerSymbol>1</oRu2MaxSectionsPerSymbol>
+     <oRu2nPrbElemDl>1</oRu2nPrbElemDl>
+     <oRu2PrbElemDl0>0,273,0,14,0,0,1,9,0,0,0</oRu2PrbElemDl0>
+     <oRu2PrbElemDl1>53,53,0,14,2,1,1,8,1,0,0</oRu2PrbElemDl1>
+diff --git a/l1/bin/nr5g/gnb/l1/xrancfg_sub6_mmimo.xml b/l1/bin/nr5g/gnb/l1/xrancfg_sub6_mmimo.xml
+index 51bacc2..c9b9480 100644
+--- a/l1/bin/nr5g/gnb/l1/xrancfg_sub6_mmimo.xml
++++ b/l1/bin/nr5g/gnb/l1/xrancfg_sub6_mmimo.xml
+@@ -20,19 +20,19 @@
+ <XranConfig>
+     <version>oran_f_release_v1.0</version>
+     <!-- numbers of O-RU connected to O-DU. All O-RUs are the same capabilities. Max O-RUs is per XRAN_PORTS_NUM i.e. 4 -->
+-    <oRuNum>3</oRuNum>
++    <oRuNum>1</oRuNum>
+     <!--  # 10G,25G,40G,100G speed of Physical connection on O-RU -->
+-    <oRuEthLinkSpeed>25</oRuEthLinkSpeed>
++    <oRuEthLinkSpeed>10</oRuEthLinkSpeed>
+     <!--  # 1, 2, 3 total number of links per O-RU (Fronthaul Ethernet link in IOT spec) -->
+-    <oRuLinesNumber>2</oRuLinesNumber>
++    <oRuLinesNumber>1</oRuLinesNumber>
+     <!--  (1) - C- plane and U-plane on the same set of VFs. (0) - C-plane and U-Plane use dedicated VFs -->
+     <oRuCUon1Vf>1</oRuCUon1Vf>
+ 
+     <!-- O-RU 0 -->
+-    <PciBusAddoRu0Vf0>0000:51:01.0</PciBusAddoRu0Vf0>
+-    <PciBusAddoRu0Vf1>0000:51:09.0</PciBusAddoRu0Vf1>
++    <PciBusAddoRu0Vf0>0000:31:01.0</PciBusAddoRu0Vf0>
++    <!-- <PciBusAddoRu0Vf1>0000:51:09.0</PciBusAddoRu0Vf1>
+     <PciBusAddoRu0Vf2>0000:51:01.2</PciBusAddoRu0Vf2>
+-    <PciBusAddoRu0Vf3>0000:51:01.3</PciBusAddoRu0Vf3>
++    <PciBusAddoRu0Vf3>0000:51:01.3</PciBusAddoRu0Vf3> -->
+ 
+     <!-- O-RU 1 -->
+     <PciBusAddoRu1Vf0>0000:51:11.0</PciBusAddoRu1Vf0>

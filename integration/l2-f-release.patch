@@ -1,0 +1,161 @@
+diff --git a/.gitignore b/.gitignore
+index 9c14461d..d264f7ff 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,3 +1,5 @@
+ # documentation
+ .tox
+ docs/_build/
++*.o
++*.a
+\ No newline at end of file
+diff --git a/build/Makefile b/build/Makefile
+index 2d026532..6d7bab3d 100644
+--- a/build/Makefile
++++ b/build/Makefile
+@@ -1,2 +1,2 @@
+-sonarqube: 
+-	cd odu;make -f makefile odu MACHINE=BIT64 MODE=TDD
++bntl: 
++	cd odu;make -f makefile odu MACHINE=BIT64 PHY=INTEL_L1 MODE=TDD
+diff --git a/build/config/cellConfig.xml b/build/config/cellConfig.xml
+index 8963f549..647c293b 100644
+--- a/build/config/cellConfig.xml
++++ b/build/config/cellConfig.xml
+@@ -58,17 +58,17 @@
+ 	<nRPCI>1</nRPCI>
+ 	<ssbFrequency>1</ssbFrequency>
+ 	<ssbPeriodicity>20</ssbPeriodicity>
+-	<ssbSubCarrierSpacing>15</ssbSubCarrierSpacing>
++	<ssbSubCarrierSpacing>30</ssbSubCarrierSpacing>
+ 	<ssbOffset>0</ssbOffset>
+ 	<ssbDuration>1</ssbDuration>
+ 	<nRSectorCarrierRef>CN=John Smith,OU=Sales,O=ACME Limited,L=Moab,ST=Utah,C=US</nRSectorCarrierRef>
+ 	<administrativeState>UNLOCKED</administrativeState>
+ 	<nRTAC>1</nRTAC>
+-	<arfcnDL>428000</arfcnDL>
+-	<arfcnUL>390000</arfcnUL>
++	<arfcnDL>627120</arfcnDL>
++	<arfcnUL>627120</arfcnUL>
+ 	<arfcnSUL>200</arfcnSUL>
+-	<bSChannelBwDL>20</bSChannelBwDL>
+-	<bSChannelBwUL>20</bSChannelBwUL>
++	<bSChannelBwDL>100</bSChannelBwDL>
++	<bSChannelBwUL>100</bSChannelBwUL>
+ 	<bSChannelBwSUL>14</bSChannelBwSUL>
+       </attributes>
+     </NRCellDU>
+diff --git a/build/config/netconfConfig.json b/build/config/netconfConfig.json
+index 238d962e..accc656b 100644
+--- a/build/config/netconfConfig.json
++++ b/build/config/netconfConfig.json
+@@ -1,8 +1,6 @@
+ {
+     "NetconfServer": {
+-        "MacAddress": "02:42:f7:d4:62:ce",
+-        "NetconfServerIpv4": "10.0.2.132",
+-        "NetconfServerIpv6": "2002:c0a8:3865::",
++        "NetconfServerIpv4": "localhost",
+         "NetconfPort": "830",
+         "NetconfUsername": "netconf",
+         "NetconfPassword": "netconf!"
+diff --git a/build/odu/makefile b/build/odu/makefile
+index d2d994eb..ac01f037 100644
+--- a/build/odu/makefile
++++ b/build/odu/makefile
+@@ -111,8 +111,8 @@ export I_OPTS
+ # Add to the linker options the platform specific components
+ L_OPTS+=-lnsl -lrt -lm -lpthread -lsctp 
+ ifeq ($(PHY), INTEL_L1)
+-	L_OPTS+=-L/root/Intel-L1-20.11.1/phy/wls_lib/ -lwls                         \
+-        -lhugetlbfs -lnuma -ldl -L/root/Intel-L1-20.11.1/dpdk-20.11.1/build/lib                        \
++	L_OPTS+=-L$(DIR_WIRELESS_WLS) -lwls                         \
++        -lhugetlbfs -lnuma -ldl -L$(RTE_SDK)/$(RTE_TARGET)/lib                        \
+         -lrte_gso -lrte_acl -lrte_hash -lrte_bbdev -lrte_ip_frag -lrte_bitratestats -lrte_ipsec        \
+         -lrte_bpf -lrte_jobstats -lrte_telemetry -lrte_kni -lrte_kvargs -lrte_latencystats -lrte_port  \
+         -lrte_lpm -lrte_power -lrte_mbuf -lrte_rawdev -lrte_member -lrte_cfgfile -lrte_mempool         \
+diff --git a/src/cm/common_def.c b/src/cm/common_def.c
+index 444db96f..b48aa619 100644
+--- a/src/cm/common_def.c
++++ b/src/cm/common_def.c
+@@ -451,7 +451,9 @@ uint32_t convertArfcnToFreqKhz(uint32_t arfcn)
+    {
+       if(arfcn <= arfcnFreqTable[indexTable][4])
+       {
+-         freq = arfcnFreqTable[indexTable][2] + (arfcnFreqTable[indexTable][1] * (arfcn - arfcnFreqTable[indexTable][3]));
++         freq = arfcnFreqTable[indexTable][2] + 
++            (arfcnFreqTable[indexTable][1] * 
++            (arfcn - arfcnFreqTable[indexTable][3]))/1000; //AAA
+          return (freq*1000);
+       }
+    }
+diff --git a/src/du_app/du_cfg.c b/src/du_app/du_cfg.c
+index 0daca41a..ea597f5f 100644
+--- a/src/du_app/du_cfg.c
++++ b/src/du_app/du_cfg.c
+@@ -246,7 +246,7 @@ uint8_t readMacCfg()
+ 
+    /* fill Intial DL BWP */
+    duCfgParam.macCellCfg.initialDlBwp.bwp.firstPrb = 0;
+-   duCfgParam.macCellCfg.initialDlBwp.bwp.numPrb = TOTAL_PRB_20MHZ_MU0; /* configured to total BW */
++   duCfgParam.macCellCfg.initialDlBwp.bwp.numPrb = TOTAL_PRB_100MHZ_MU1; /* configured to total BW */
+    duCfgParam.macCellCfg.initialDlBwp.bwp.scs = duCfgParam.macCellCfg.ssbCfg.scsCmn;
+    duCfgParam.macCellCfg.initialDlBwp.bwp.cyclicPrefix = NORMAL_CYCLIC_PREFIX;
+    duCfgParam.macCellCfg.initialDlBwp.pdcchCommon.commonSearchSpace.searchSpaceId = SEARCHSPACE_1_INDEX;
+@@ -291,7 +291,7 @@ uint8_t readMacCfg()
+ 
+    /* fill Intial UL BWP */
+    duCfgParam.macCellCfg.initialUlBwp.bwp.firstPrb = 0;
+-   duCfgParam.macCellCfg.initialUlBwp.bwp.numPrb = TOTAL_PRB_20MHZ_MU0; /* configured to total BW */
++   duCfgParam.macCellCfg.initialUlBwp.bwp.numPrb = TOTAL_PRB_100MHZ_MU1; /* configured to total BW */
+    duCfgParam.macCellCfg.initialUlBwp.bwp.scs = duCfgParam.macCellCfg.ssbCfg.scsCmn;
+    duCfgParam.macCellCfg.initialUlBwp.bwp.cyclicPrefix = NORMAL_CYCLIC_PREFIX;
+    duCfgParam.macCellCfg.initialUlBwp.puschCommon.numTimeDomRsrcAlloc = 2;
+@@ -445,7 +445,7 @@ uint8_t fillServCellCfgCommSib(SrvCellCfgCommSib *srvCellCfgComm)
+ #else
+    srvCellCfgComm->dlCfg.dlScsCarrier.scsOffset = SSB_SUBCARRIER_OFFSET;
+    srvCellCfgComm->dlCfg.dlScsCarrier.scs = NR_SCS;
+-   srvCellCfgComm->dlCfg.dlScsCarrier.scsBw = NR_BANDWIDTH;
++   srvCellCfgComm->dlCfg.dlScsCarrier.scsBw = 273; //NR_BANDWIDTH;
+ #endif   
+    srvCellCfgComm->dlCfg.locAndBw = FREQ_LOC_BW;
+ 
+diff --git a/src/du_app/du_cfg.h b/src/du_app/du_cfg.h
+index 3876523e..c193b389 100644
+--- a/src/du_app/du_cfg.h
++++ b/src/du_app/du_cfg.h
+@@ -47,8 +47,10 @@
+ #ifdef NR_TDD
+ #define DUPLEX_MODE DUP_MODE_TDD
+ #define NR_NUMEROLOGY 1
+-#define NR_DL_ARFCN 623400
+-#define NR_UL_ARFCN 623400
++#define NR_DL_ARFCN 627120
++// #define NR_DL_ARFCN 623400
++#define NR_UL_ARFCN 627120
++// #define NR_UL_ARFCN 623400
+ #define NR_FREQ_BAND 78
+ #define NR_SCS SCS_30KHZ
+ #define NR_BANDWIDTH BANDWIDTH_100MHZ
+@@ -88,7 +90,8 @@
+ #define BETA_PSS BETA_PSS_0DB  
+ #define SSB_PERIODICITY 20
+ #define SSB_SUBCARRIER_OFFSET 0         
+-#define SSB_FREQUENCY  3000000   /*ssbFrequency in kHz*/
++// #define SSB_FREQUENCY  3000000   /*ssbFrequency in kHz*/
++#define SSB_FREQUENCY  627072   /*ssbFrequency in kHz*/
+ #define SSB_MULT_CARRIER_BAND FALSE
+ #define MULT_CELL_CARRIER FALSE
+ #define FREQ_LOC_BW  28875             /* DL frequency location and bandwidth. Spec 38.508 Table 4.3.1.0B-1*/
+@@ -183,9 +186,9 @@
+ 
+ /* MACRO defines for TDD DL-UL Configuration */
+ #define NUM_DL_SLOTS 7
+-#define NUM_DL_SYMBOLS 12 
++#define NUM_DL_SYMBOLS 6 
+ #define NUM_UL_SLOTS 2
+-#define NUM_UL_SYMBOLS 1
++#define NUM_UL_SYMBOLS 4
+ #define GUARD_SLOT_IDX 7
+ 
+ /* MACRO defines for SRC config */

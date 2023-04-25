@@ -1,0 +1,291 @@
+diff --git a/.gitignore b/.gitignore
+index 71d7636..7e4a9c1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,2 +1,4 @@
+ .tox
+ docs/_build/*
++*.o
++*.so
+diff --git a/fapi_5g/bin/oran_5g_fapi.cfg b/fapi_5g/bin/oran_5g_fapi.cfg
+index e864853..5fe5932 100644
+--- a/fapi_5g/bin/oran_5g_fapi.cfg
++++ b/fapi_5g/bin/oran_5g_fapi.cfg
+@@ -22,18 +22,18 @@
+ ; Note:
+ ; Schedule Policy [1: SCHED_FIFO 2: SCHED_RR]
+ [MAC2PHY_WORKER]
+-core_id = 10
++core_id = 18
+ thread_sched_policy = 1
+ thread_priority = 89
+ 
+ [PHY2MAC_WORKER]
+-core_id = 11
++core_id = 19
+ thread_sched_policy = 1
+ thread_priority = 89
+ 
+ [URLLC_WORKER]
+ is_enabled = 1
+-core_id = 12
++core_id = 17
+ thread_sched_policy = 1
+ thread_priority = 96
+ 
+@@ -48,7 +48,6 @@ shmem_size = 2126512128
+ ; trace
+ [LOGGER]
+ level = none
+-
+ [DPDK]
+ ; IOVA Mode 
+ ; 0 - PA
+diff --git a/fhi_lib/app/usecase/cat_a/mu1_100mhz/2/usecase_du.cfg b/fhi_lib/app/usecase/cat_a/mu1_100mhz/2/usecase_du.cfg
+index 12d06c3..bff9295 100644
+--- a/fhi_lib/app/usecase/cat_a/mu1_100mhz/2/usecase_du.cfg
++++ b/fhi_lib/app/usecase/cat_a/mu1_100mhz/2/usecase_du.cfg
+@@ -24,7 +24,7 @@ oXuBbuCfgFile=../bbu_pool_cfg_o_du.xml
+ 
+ oXuNum=1 # numbers of O-RU connected to O-DU
+ 
+-oXuEthLinkSpeed=25  # 10G,25G,40G,100G speed of Physical connection on O-RU
++oXuEthLinkSpeed=10  # 10G,25G,40G,100G speed of Physical connection on O-RU
+ oXuLinesNumber=1    # 1, 2, 3 total number of links per O-RU (Fronthaul Ethernet link)
+ 
+ oXuCfgFile0=./config_file_o_du.dat  #O-RU0
+diff --git a/fhi_lib/app/usecase/cat_a/mu1_100mhz/usecase_du.cfg b/fhi_lib/app/usecase/cat_a/mu1_100mhz/usecase_du.cfg
+index 84a7872..b141835 100644
+--- a/fhi_lib/app/usecase/cat_a/mu1_100mhz/usecase_du.cfg
++++ b/fhi_lib/app/usecase/cat_a/mu1_100mhz/usecase_du.cfg
+@@ -24,7 +24,7 @@ oXuBbuCfgFile=./bbu_pool_cfg_o_du.xml
+ 
+ oXuNum=1 # numbers of O-RU connected to O-DU
+ 
+-oXuEthLinkSpeed=25  # 10G,25G,40G,100G speed of Physical connection on O-RU
++oXuEthLinkSpeed=10  # 10G,25G,40G,100G speed of Physical connection on O-RU
+ oXuLinesNumber=1    # 1, 2, 3 total number of links per O-RU (Fronthaul Ethernet link)
+ 
+ oXuCfgFile0=./config_file_o_du.dat  #O-RU0
+diff --git a/fhi_lib/build.sh b/fhi_lib/build.sh
+old mode 100644
+new mode 100755
+diff --git a/fhi_lib/lib/src/xran_main.c b/fhi_lib/lib/src/xran_main.c
+index 7c472d7..708d6f7 100644
+--- a/fhi_lib/lib/src/xran_main.c
++++ b/fhi_lib/lib/src/xran_main.c
+@@ -3893,8 +3893,14 @@ xran_open(void *pHandle, struct xran_fh_config* pConf)
+             printf("XRAN_UP_VF: 0x%04x\n", eth_ctx->io_cfg.port[XRAN_UP_VF]);
+             p_xran_dev_ctx->timing_source_thread_running = 0;
+             xran_core_used[xran_num_cores_used++] = eth_ctx->io_cfg.timing_core;
+-            if (rte_eal_remote_launch(xran_timing_source_thread, xran_dev_get_ctx(), eth_ctx->io_cfg.timing_core))
+-            rte_panic("thread_run() failed to start\n");
++            uint lcore = eth_ctx->io_cfg.timing_core;
++            enum rte_lcore_state_t lcore_state = rte_eal_get_lcore_state(lcore);
++            int err = rte_eal_remote_launch(xran_timing_source_thread, xran_dev_get_ctx(), 
++                lcore);
++            printf("AAA rte_eal_remote_launch lcore %d/%d (%d) status: %d\n", lcore, 
++                rte_lcore_count(), lcore_state, err);
++            if (err)
++                rte_panic("thread_run() failed to start\n");
+         } else if(pConf->log_level) {
+                 printf("Eth port was not open. Processing thread was not started\n");
+         }
+diff --git a/fhi_lib/lib/src/xran_sync_api.c b/fhi_lib/lib/src/xran_sync_api.c
+index a8e18f9..8d55cbb 100644
+--- a/fhi_lib/lib/src/xran_sync_api.c
++++ b/fhi_lib/lib/src/xran_sync_api.c
+@@ -37,7 +37,7 @@
+ #define BUF_LEN 256
+ #define PROC_DIR "/proc"
+ #define COMM_FILE "comm"
+-#define PMC_CMD "pmc -u -b 0 'GET PORT_DATA_SET'"
++#define PMC_CMD "pmc -u -b 0 'GET PORT_DATA_SET' -d 24"
+ #define PTP4L_PROC_NAME "ptp4l"
+ #define PHC2SYS_PROC_NAME "phc2sys"
+ 
+diff --git a/fhi_lib/test/common/common.hpp b/fhi_lib/test/common/common.hpp
+index 2516dba..a4c1cc9 100644
+--- a/fhi_lib/test/common/common.hpp
++++ b/fhi_lib/test/common/common.hpp
+@@ -31,7 +31,9 @@
+ #include <rte_malloc.h>
+ #endif
+ 
++#ifndef AAA_OAI
+ #include "gtest/gtest.h"
++#endif
+ 
+ #include "common_typedef_xran.h"
+ 
+@@ -119,7 +121,7 @@ unsigned long tsc_recovery();
+     \return Current TSC value
+ */
+ unsigned long tsc_tick();
+-
++#ifndef AAA_OAI 
+ /*!
+     \class KernelTests
+ 
+@@ -827,5 +829,5 @@ inline T* generate_random_real_numbers(const long size, const unsigned alignment
+ 
+     return generate_random_numbers<T, std::uniform_real_distribution<T>>(size, alignment, distribution);
+ }
+-
++#endif //AAA_OAI
+ #endif //XRANLIB_COMMON_HPP
+diff --git a/fhi_lib/test/common/common_typedef_xran.h b/fhi_lib/test/common/common_typedef_xran.h
+index d4616f3..95a252f 100644
+--- a/fhi_lib/test/common/common_typedef_xran.h
++++ b/fhi_lib/test/common/common_typedef_xran.h
+@@ -93,18 +93,21 @@ typedef struct {
+     half im; /*!< 16-bit image part */
+ }complex_half;
+ 
++#ifndef AAA_OAI //AAA
+ /*!
+     \enum instruction_cpu_support
+     \brief Define instruction the CPU can support.
+ */
+-typedef enum{
++// typedef enum{
++enum instruction_cpu_support {
+     CPU_GENERIC, /*!< C */
+     SSE4_2,      /*!< SSE4_2 */
+     AVX,         /*!< AVX */
+-    AVX2,        /*!< AVX2 */
+-    AVX_512,     /*!< AVX512 */
+-}instruction_cpu_support;
+-
++    // AVX2,        /*!< AVX2 */
++    AVX_512     /*!< AVX512 */
++// }instruction_cpu_support;
++};
++#endif //AAA_OAI
+ /*!
+     \enum bblib_modulation_order
+     \brief Common enums for modulation order.
+diff --git a/setupenv.sh b/setupenv.sh
+index 0cd8254..74d5f1d 100755
+--- a/setupenv.sh
++++ b/setupenv.sh
+@@ -1,33 +1,49 @@
+ #!/bin/bash
++#set -x
+ 
+ export DIR_ROOT=$HOME
+ #set the L1 binary root DIR
+-export DIR_ROOT_L1_BIN=$DIR_ROOT/FlexRAN
++export DIR_ROOT_L1_BIN=$DIR_ROOT/gitrepo/FlexRAN
+ #set the phy root DIR
+ export DIR_ROOT_PHY=$DIR_ROOT/phy
+ #set the DPDK root DIR
+-export DIR_ROOT_DPDK=/$DIR_ROOT/dpdk
++export DIR_ROOT_DPDK=/$HOME/DPDK/dpdk-stable-20.11.3
+ #set the GTEST root DIR
+-#export DIR_ROOT_GTEST=/home/gtest/gtest-1.7.0
++export DIR_ROOT_GTEST=$HOME/gtest-1.7.0
+ 
++# for SkyLake
++# export WIRELESS_SDK_TARGET_ISA=avx512
++# for Icelake
++export WIRELESS_SDK_TARGET_ISA=snc
++#already in .bashrc
++# export WIRELESS_SDK_TOOLCHAIN=icc
+ export DIR_WIRELESS_TEST_5G=$DIR_ROOT_L1_BIN/testcase
+ export DIR_WIRELESS_SDK=$DIR_ROOT_L1_BIN/sdk/build-avx512-icc
+ export DIR_WIRELESS_TABLE_5G=$DIR_ROOT_L1_BIN/l1/bin/nr5g/gnb/l1/table
+ #source /opt/intel/system_studio_2019/bin/iccvars.sh intel64 -platform linux
+ export XRAN_DIR=$DIR_ROOT_PHY/fhi_lib
+ export XRAN_LIB_SO=true
+-export RTE_TARGET=x86_64-native-linuxapp-icc
+-export RTE_SDK=$DIR_ROOT_DPDK
+-export DESTDIR=$DIR_ROOT_DPDK
++# for OAI
++export XRAN_LIB_DIR=$XRAN_DIR
++
++# export RTE_TARGET=x86_64-native-linuxapp-icx
++# export RTE_TARGET=x86_64-native-linuxapp-icc
++# export RTE_SDK=$DIR_ROOT_DPDK
++#Uncomment, commented to build DPDK
++#export DESTDIR=$DIR_ROOT_DPDK
+ 
+ #Uncomment to run tests - it's commented to make builds faster.
+-#export GTEST_ROOT=$DIR_ROOT_GTEST
++export GTEST_ROOT=$DIR_ROOT_GTEST
+ 
+ export ORAN_5G_FAPI=true
+ export DIR_WIRELESS_WLS=$DIR_ROOT_PHY/wls_lib
+ export DEBUG_MODE=true
+ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIR_WIRELESS_WLS:$XRAN_DIR/lib/build
+-export DIR_WIRELESS=$DIR_ROOT_L1_BIN/l1
++export DIR_WIRELESS=$DIR_ROOT_L1_BIN
+ export DIR_WIRELESS_ORAN_5G_FAPI=$DIR_ROOT_PHY/fapi_5g
+-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIR_ROOT_L1_BIN/libs/cpa/bin
++export DIR_WIRELESS_ORAN=$DIR_WIRELESS_ORAN_5G_FAPI
++export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DIR_ROOT_L1_BIN/libs/cpa/bin:/opt/intel/oneapi/mkl/2023.0.0/lib/intel64:~/dpdk-stable-20.11.3/x86_64-native-linuxapp-icc/lib
++
++
++echo ":::: ORAN F-Release PHY environment set, TARGET_ISA="$WIRELESS_SDK_TARGET_ISA
+ 
+diff --git a/wls_lib/test/fapi/fapi_main.c b/wls_lib/test/fapi/fapi_main.c
+index 9492ad0..3e2ac62 100644
+--- a/wls_lib/test/fapi/fapi_main.c
++++ b/wls_lib/test/fapi/fapi_main.c
+@@ -129,7 +129,7 @@ uint64_t nr5g_fapi_wls_va_to_pa(WLS_HANDLE h_wls, void *ptr)
+     return ((uint64_t)WLS_VA2PA(h_wls, ptr));
+ }
+ 
+-inline p_nr5g_fapi_wls_context_t nr5g_fapi_wls_context()
++static inline p_nr5g_fapi_wls_context_t nr5g_fapi_wls_context()
+ {
+     return &g_wls_ctx;
+ }
+@@ -360,16 +360,20 @@ uint8_t nr5g_fapi2Phy_wls_init(p_nr5g_fapi_wls_context_t pWls)
+ uint8_t nr5g_fapi_fapi2mac_wls_ready()
+ {
+     int ret = SUCCESS;
+-    ret = WLS_Ready1(nr5g_fapi_fapi2mac_wls_instance());
++    WLS_HANDLE wlsp = nr5g_fapi_fapi2phy_wls_instance();
++	    
++    ret = WLS_Ready1(wlsp);
+     return ret;
+ }
+ 
+ 
+-inline uint8_t nr5g_fapi_fapi2phy_wls_ready()
++static inline uint8_t nr5g_fapi_fapi2phy_wls_ready()
+ {
+     int ret = SUCCESS;
++    WLS_HANDLE wlsp = nr5g_fapi_fapi2phy_wls_instance();
++    
+     //NR5G_FAPI_LOG(TRACE_LOG, ("Waiting for L1 to respond in WLS Ready"));
+-    ret = WLS_Ready(nr5g_fapi_fapi2phy_wls_instance());
++    ret = WLS_Ready(wlsp);
+     return ret;
+ }
+ 
+diff --git a/wls_lib/test/mac/mac_main.c b/wls_lib/test/mac/mac_main.c
+index bc8a235..ecfbe88 100644
+--- a/wls_lib/test/mac/mac_main.c
++++ b/wls_lib/test/mac/mac_main.c
+@@ -34,7 +34,9 @@
+ #define WLS_TEST_MSG_ID   1
+ #define WLS_TEST_MSG_SIZE 100
+ 
+-#define N_MAC_MSGS   16
++#define N_MAC_MSGS   600
++
++void wls_mac_print_stats(void);
+ 
+ int main()
+ {
+@@ -70,6 +72,8 @@ int main()
+     // Receive from FAPI WLS
+     wls_mac_rx_task();
+ 
++    wls_mac_print_stats();
++
+     printf("\n[MAC] Exiting...\n");
+ 
+     return SUCCESS;
