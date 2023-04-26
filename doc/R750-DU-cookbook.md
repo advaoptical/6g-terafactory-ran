@@ -10,5 +10,5 @@ The O-DU Low G release [1] is the same as the F Release that added support for M
 ## [Drivers](./drivers.md)
 ## [L1 dependencies](./L1-deps.md)
 ## [ORAN: Build FHI/WLS/FAPI TM](https://docs.o-ran-sc.org/projects/o-ran-sc-o-du-phy/en/latest/run_l1.html)
-## [L1 CPU cores allocation](./lcore-allocation)
+## [L1 CPU cores allocation](./lcore-allocation.md)
 ## [ODU compilation with Intel L1](./odu-high.md)
