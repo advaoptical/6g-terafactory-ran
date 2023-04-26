@@ -14,7 +14,7 @@ All is correct with small changes:
 1. When running ```make menuconfig``` we *might* need to select ```-> General Setup.Embedded``` to enable “Expert” mode, allowing full preemptive RT mode.
 
 2. Before “make” step we need to comment out the lines CONFIG_SYSTEM_TRUSTED_KEY and CONFIG_MODULE_SIG_KEY in .config file.
-As result, we will just use a random one-time cert.
+As result, we will just use a random one-time cert. After make launch, hit Enter to all prompts.
 
 3. make arguments are different:
 
@@ -22,7 +22,32 @@ As result, we will just use a random one-time cert.
 ```
 make -j `getconf _NPROCESSORS_ONLN` bindeb-pkg LOCALVERSION=-custom
 ```
-Hit Enter to all the prompts.
+
+## Set the *tuned*^* profile to *real-time*
+
+This setting is not fully validated and needs further investigation.
+
+```
+sudo systemctl disable ondemand
+# Restart
+
+sudo apt install tuned
+```
+
+Edit the configuration file */etc/tuned/realtime-variables.conf* – set the  value for isolated-cores to be equal to one defined by Linux command line (e.g. isolcpus=1-19) 
+
+```
+advaadmin@yrksrv03:~$ cat /etc/tuned/realtime-variables.conf
+# Examples:
+isolated_cores=1-19
+```
+```
+advaadmin@yrksrv03:~/gitrepo$ sudo tuned-adm profile realtime
+advaadmin@yrksrv03:~/gitrepo$ tuned-adm active
+Current active profile: realtime
+```
+
+**NOTE:** *realtime* profile is not validated yet. Profile *latency-performance* was OK. When set to realtime, ODU did not work properly and system response was very slow. On the other hand, some messages from OAI forum suggested that realtime is mandatory...
 
 ## ICE driver patching
 
