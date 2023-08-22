@@ -2,11 +2,13 @@
 
 ## libcrypto
 
-One of unpleasant ABI dependencies is libcrypto.so.10, part of Open SSL. The challenge is that the expected ABI is far behind one installed on Ubuntu.  To solve this dependency, we need to get a specific old version of Open SSL and to build libcrypto.so
+One of an unpleasant ABI dependencies is libcrypto.so.10, which is part of Open SSL. The challenge is that the expected ABI is far behind one installed along with Ubuntu.  To solve this dependency, we need to get a specific archaic version of Open SSL and to build libcrypto.so
+```
 wget https://ftp.openssl.org/source/old/1.0.2/openssl-1.0.2k.tar.gz
 tar -xvf openssl-1.0.2k.tar.gz
 cd openssl-1.0.2k; sudo ./config -fPIC -shared; make
 sudo ln -s ~/openssl-1.0.2k/libcrypto.so.1.0.0 /usr/lib/libcrypto.so.10
+```
 
 ## libpcap
 
