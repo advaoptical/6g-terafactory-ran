@@ -1,0 +1,37 @@
+advaadmin@yrksrv03:~/gitrepo/openairinterface5g$ git branch
+* VVDN_ORAN_fhi_integration
+advaadmin@yrksrv03:~/gitrepo/openairinterface5g$ git branch -av --sort=-committerdate --format='%(committerdate:short) %(refname:short)'
+2023-05-15 origin/L1_tx_amp
+2023-05-15 origin/ci-ping-improvements
+2023-05-12 origin/fix-reconfigurationWithSync2
+2023-05-12 origin/int-f1-ue-ctxt-release
+2023-05-12 origin/develop-UL-RI
+2023-05-12 origin/ci-iperf-improvements
+2023-05-12 origin/NR_UE_rework_coreset_searchspace
+2023-05-12 origin/develop
+2023-05-12 origin/accept-pdusession-ipv4v6
+2023-05-12 origin/HEAD
+2023-05-11 origin/NR_UE_pdsch_proc_refactor
+2023-05-11 origin/episys-add-sl-freq
+2023-05-11 origin/pkt_seg_demo
+2023-05-11 origin/merge_secu_osa
+2023-05-10 origin/episys-add-complex-structs
+2023-05-10 origin/episys-merge-develop-sl
+2023-05-10 origin/Fix_FAPI_PARAM_and_CONFIG_messages
+2023-05-10 origin/remove-thread-pool-abort
+2023-05-10 origin/ci-aw2s-add-iperf
+2023-05-09 origin/develop-PUCCH2
+2023-05-09 origin/itti-dependancies
+2023-05-09 origin/int-f1-ue-ctxt-modif
+2023-05-09 origin/new-aarch64-build
+2023-05-08 origin/NR_UE_multi_pdusession
+2023-05-08 origin/remove-unused-static-functions
+2023-05-08 origin/NR_4_layers_MIMO
+2023-05-07 origin/NR_UE_pucch1
+2023-05-06 origin/use_msgq_new_fhidriver
+2023-05-05 origin/episys-merge-SL-variables
+2023-05-05 origin/NR_UE_fix_timing_adjust
+2023-05-04 origin/websrv_fix
+2023-05-03 origin/NRPPA_Procedures
+2023-05-03 origin/ldpc_cuda_bg2_fix
+
