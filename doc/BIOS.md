@@ -1,4 +1,4 @@
-ORAN expects the certain BIOS setting. Specifically, we need to disable hyperthreading, set linear core numbering and enable SR-IOV.
+ORAN expects the certain BIOS setting. Specifically, we need to disable hyperthreading, set linear core numbering for multi-socket platfrom and enable SR-IOV.
 
 By default, BIOS chooses assignment of odd Cores for node 0 and even ones for node 1:
 
@@ -37,12 +37,12 @@ node   0   1
 
 Here the necessary configuration steps performed on IDRAC console.
 
-```
+```bash
 #check Hyperthreading
-racadm get BIOS.ProcSettings.LogicalProc
+get BIOS.ProcSettings.LogicalProc
 
 #disable Hyperthreading
-racadm set BIOS.ProcSettings.LogicalProc Disabled
+set BIOS.ProcSettings.LogicalProc Disabled
 
 # Set Linear core enumeration. Node0 Cores [0-27], Node1 Cores [28-55]
 set BIOS.ProcSettings.MadtCoreEnumeration Linear
@@ -51,13 +51,13 @@ set BIOS.ProcSettings.MadtCoreEnumeration Linear
 set biOS.integratedDevices.sriovGlobalEnable Enabled
 
 # Set performance profile
-racadm set bios.SysProfileSettings.SysProfile Custom
-racadm set BIOS.SysProfileSettings.ProcPwrPerf MaxPerf
-racadm set BIOS.SysProfileSettings.ProcC1E Disabled
-racadm set Bios.sysprofileSettings.proccstates Disabled
+set bios.SysProfileSettings.SysProfile Custom
+set BIOS.SysProfileSettings.ProcPwrPerf MaxPerf
+set BIOS.SysProfileSettings.ProcC1E Disabled
+set Bios.sysprofileSettings.proccstates Disabled
 
 #commit the changes and reboot
-racadm jobqueue create BIOS.Setup.1-1 -r pwrcycle -s TIME_NOW -e TIME_NA
+jobqueue create BIOS.Setup.1-1 -r pwrcycle -s TIME_NOW -e TIME_NA
 
 # Enable SR-IOV per device
 set NIC.DeviceLevelConfig.1.VirtualizationMode SRIOV
@@ -65,8 +65,8 @@ set NIC.DeviceLevelConfig.2.VirtualizationMode SRIOV
 set NIC.DeviceLevelConfig.3.VirtualizationMode SRIOV
 set NIC.DeviceLevelConfig.4.VirtualizationMode SRIOV
 # Now commit changes and restart
-racadm jobqueue create NIC.Integrated.1-1-1 -s TIME_NOW -e TIME_NA
-racadm jobqueue create NIC.Integrated.1-2-1 -s TIME_NOW -e TIME_NA
-racadm jobqueue create NIC.Slot.5-2-1 -s TIME_NOW -e TIME_NA
-racadm jobqueue create NIC.Slot.5-1-1 -s TIME_NOW -e TIME_NA -r pwrcycle
+jobqueue create NIC.Integrated.1-1-1 -s TIME_NOW -e TIME_NA
+jobqueue create NIC.Integrated.1-2-1 -s TIME_NOW -e TIME_NA
+jobqueue create NIC.Slot.5-2-1 -s TIME_NOW -e TIME_NA
+jobqueue create NIC.Slot.5-1-1 -s TIME_NOW -e TIME_NA -r pwrcycle
 ```
